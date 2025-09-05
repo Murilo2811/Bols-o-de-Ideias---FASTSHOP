@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import Loader from './Loader';
+import Logo from './Logo';
 
 const PasswordCriterion: React.FC<{ isValid: boolean; text: string }> = ({ isValid, text }) => (
     <div className={`flex items-center gap-2 transition-colors text-sm ${isValid ? 'text-gray-200' : 'text-gray-500'}`}>
@@ -84,6 +85,7 @@ const AuthPage: React.FC = () => {
     <div className="min-h-screen bg-brand-dark-bg flex flex-col justify-center items-center p-4">
       <div className="w-full max-w-md bg-brand-dark-card rounded-2xl shadow-xl p-8 space-y-6 animate-fade-in">
         <div className="text-center">
+          <Logo className="h-12 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-white">Bolsão de Ideias</h1>
           <p className="text-gray-300 mt-2">{isLoginView ? 'Acesse sua conta para continuar' : 'Crie uma conta para começar'}</p>
         </div>

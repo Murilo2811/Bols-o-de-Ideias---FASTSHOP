@@ -1,6 +1,7 @@
 import React from 'react';
 import type { User } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
+import Logo from './Logo';
 
 interface HeaderProps {
   user: User | null;
@@ -70,7 +71,10 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onHelpClick, onCommandM
         </button>
       </div>
       
-      <h1 className="text-4xl md:text-5xl font-bold mb-4">Bolsão de Ideias - FASTSHOP</h1>
+      <div className="flex flex-col items-center">
+        <Logo className="h-12 md:h-16" />
+        <h1 className="text-4xl md:text-5xl font-bold mt-2 mb-4">Bolsão de Ideias</h1>
+      </div>
       <p className="text-lg md:text-xl max-w-3xl mx-auto">
         Uma plataforma interativa para análise, priorização e exploração de um portfólio de ideias de serviços inovadores.
       </p>

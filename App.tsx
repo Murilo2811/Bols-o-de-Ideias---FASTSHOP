@@ -3,6 +3,7 @@ import { ServicesProvider, useServices } from './contexts/ServicesContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 import AuthPage from './components/AuthPage';
+import Logo from './components/Logo';
 
 import Header from './components/Header';
 import NavigationBar from './components/NavigationBar';
@@ -95,6 +96,7 @@ const MainAppContent: React.FC = () => {
   if (isLoading && !appError) {
     return (
       <div className={`flex flex-col items-center justify-center min-h-screen ${theme === 'dark' ? 'bg-brand-dark-bg' : 'bg-gray-100'}`}>
+        <Logo className="h-16 mb-8" />
         <Loader text={loadingMessage} />
       </div>
     );
@@ -102,7 +104,11 @@ const MainAppContent: React.FC = () => {
 
   if (appError) {
     return (
-      <div className={`flex items-center justify-center min-h-screen p-4 ${theme === 'dark' ? 'bg-brand-dark-bg' : 'bg-gray-100'}`}>
+      <div className={`flex flex-col items-center justify-center min-h-screen p-4 ${theme === 'dark' ? 'bg-brand-dark-bg' : 'bg-gray-100'}`}>
+        <div className="text-center mb-8">
+            <Logo className="h-12 mx-auto" />
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">Bolsão de Ideias</h1>
+        </div>
         <div className="w-full max-w-2xl bg-white dark:bg-brand-dark-card p-8 rounded-xl shadow-2xl text-center">
            <svg className="mx-auto h-16 w-16 text-brand-mid" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4.998C12.962 3.667 11.038 3.667 10.268 4.998L3.33 16.002c-.77 1.333.162 3 1.732 3z" />
