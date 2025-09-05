@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bolsão de Ideias: Gestão de Portfólio</title>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              // Light & Dark Mode Grayscale Palette
+              'brand-dark': '#2D3748',      // Dark Text, Primary Buttons (Light)
+              'brand-mid': '#4A5568',       // Medium Text, Borders
+              'brand-light': '#A0AEC0',     // Light Text, Icons
+              'brand-accent': '#718096',    // Secondary Text, Hovers
+              'brand-primary': '#4A5568',   // Main interactive color (gray)
+
+              // Dark Mode Specific
+              'brand-dark-bg': '#1A202C',      // Very dark background
+              'brand-dark-card': '#2D3748',     // Card background
+              'brand-dark-border': '#4A5568',   // Borders and separators
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-in-out',
+              'glow': 'glow 1.5s infinite alternate',
+              'aurora': 'aurora 60s infinite linear',
+              'stagger': 'stagger 0.5s ease-out forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              glow: {
+                '0%': { boxShadow: '0 0 5px rgba(113, 128, 150, 0)' },
+                '100%': { boxShadow: '0 0 20px rgba(113, 128, 150, 0.4)' },
+              },
+              aurora: {
+                '0%': { backgroundPosition: '0% 50%' },
+                '50%': { backgroundPosition: '100% 50%' },
+                '100%': { backgroundPosition: '0% 50%' },
+              },
+               stagger: {
+                '0%': { opacity: 0, transform: 'translateY(20px)' },
+                '100%': { opacity: 1, transform: 'translateY(0px)' },
+              }
+            },
+          }
+        }
+      }
+    </script>
+  <style>
+    .aurora-bg {
+      position: relative;
+      overflow: hidden;
+    }
+    .aurora-bg::before {
+      content: '';
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      z-index: 0;
+      background-image: radial-gradient(circle at 10% 20%, rgba(160, 174, 192, 0.05), transparent 30%),
+                        radial-gradient(circle at 80% 90%, rgba(113, 128, 150, 0.05), transparent 30%),
+                        radial-gradient(circle at 50% 50%, rgba(237, 242, 247, 0.05), transparent 40%);
+      background-size: 300% 300%;
+      animation: aurora 20s ease-in-out infinite;
+      transition: opacity 0.5s ease;
+    }
+    .dark .aurora-bg::before {
+       background-image: radial-gradient(circle at 10% 20%, rgba(160, 174, 192, 0.08), transparent 40%),
+                        radial-gradient(circle at 80% 90%, rgba(113, 128, 150, 0.08), transparent 40%),
+                        radial-gradient(circle at 50% 50%, rgba(45, 55, 72, 0.1), transparent 50%);
+    }
+    .stagger-item {
+        animation: stagger 0.5s ease-out forwards;
+        opacity: 0;
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "react/": "https://esm.sh/react@^19.1.1/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.12.0",
+    "recharts": "https://esm.sh/recharts@^3.1.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
