@@ -68,9 +68,11 @@ Esta planilha armazenará todas as suas ideias de serviço e as credenciais dos 
         - `name`
         - `email`
         - `password`
-        - `role`  **(NOVO CAMPO OBRIGATÓRIO)**
+        - `role`
 
-    - **Defina a função do seu primeiro usuário**: Após registrar sua primeira conta, vá até a planilha `UsersDB`, encontre a linha correspondente ao seu usuário e, na coluna `role`, digite `Administrador`. Os novos usuários registrados terão a função `Leitor` por padrão.
+4.  **(NOVO) Configure a Aba de Ideias Apagadas (`DeletedIdeiasDB`)**:
+    - Crie uma **terceira página (aba)** na mesma planilha e renomeie-a para `DeletedIdeiasDB`.
+    - **Copie a primeira linha (cabeçalhos) da aba `IdeiasDB` e cole-a na primeira linha da nova aba `DeletedIdeiasDB`**. Isso é essencial para que o arquivamento funcione corretamente.
 
 ### Parte 2: Configurar o Backend (Google Apps Script)
 
@@ -87,11 +89,18 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
     const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
     const IDEAS_SHEET_NAME = 'IdeiasDB';
     const USERS_SHEET_NAME = 'UsersDB';
+    const DELETED_IDEAS_SHEET_NAME = 'DeletedIdeiasDB'; // Nova planilha para arquivamento
 
     const getSheet = (name) => SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name);
     
     // Converte uma linha da planilha para um objeto de serviço
     const rowToService = (row, headers) => {
+        // CORREÇÃO: Adiciona uma verificação para evitar erros quando os parâmetros são indefinidos.
+        if (!row || !headers) {
+            Logger.log('rowToService chamada com parâmetros inválidos (row ou headers indefinidos).');
+            return {}; // Retorna um objeto vazio para evitar o travamento.
+        }
+    
         const service = {};
         headers.forEach((header, index) => {
             let value = row[index];
@@ -106,6 +115,7 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
             service.score_viabilidade, service.score_vantagem_comp
         ];
         
+        // Remove as propriedades de score individuais
         delete service.score_alinhamento; delete service.score_valor_cliente;
         delete service.score_impacto_fin; delete service.score_viabilidade;
         delete service.score_vantagem_comp;
@@ -125,8 +135,7 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
                 case 'getServices': result = doGetServices(); break;
                 case 'addService': result = doAddService(payload.service); break;
                 case 'updateService': result = doUpdateService(payload.service); break;
-                case 'bulkUpdateServices': result = doBulkUpdateServices(payload.services); break;
-                case 'deleteService': result = doDeleteService(payload.id); break;
+                case 'deleteService': result = doDeleteService(payload.id); break; // A lógica foi atualizada
                 // Autenticação
                 case 'loginUser': result = doLoginUser(payload); break;
                 case 'registerUser': result = doRegisterUser(payload); break;
@@ -181,21 +190,27 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
         sheet.getRange(rowIndex, 1, 1, headers.length).setValues([newRow]);
         return rowToService(newRow, headers);
     }
-    
-    function doBulkUpdateServices(services) {
-        // Implementação omitida por brevidade, pode ser adicionada se necessário
-        return { updatedCount: services.length };
-    }
 
     function doDeleteService(id) {
-        const sheet = getSheet(IDEAS_SHEET_NAME);
-        const data = sheet.getDataRange().getValues();
+        const ideasSheet = getSheet(IDEAS_SHEET_NAME);
+        const deletedSheet = getSheet(DELETED_IDEAS_SHEET_NAME);
+        
+        if (!ideasSheet) throw new Error(`Aba "${IDEAS_SHEET_NAME}" não encontrada.`);
+        if (!deletedSheet) throw new Error(`Aba de arquivamento "${DELETED_IDEAS_SHEET_NAME}" não encontrada. Crie-a conforme as instruções do README.`);
+
+        const data = ideasSheet.getDataRange().getValues();
         const idColIndex = data[0].indexOf('id');
         const rowIndex = data.findIndex(row => row[idColIndex] == id);
         
         if (rowIndex === -1) throw new Error(`Serviço com id ${id} não encontrado.`);
+
+        // Copia a linha para a planilha de deletados antes de apagar
+        const rowToDelete = data[rowIndex];
+        deletedSheet.appendRow(rowToDelete);
         
-        sheet.deleteRow(rowIndex + 1);
+        // Apaga a linha da planilha original
+        ideasSheet.deleteRow(rowIndex + 1); // +1 porque findIndex é no array de dados, e deleteRow é na planilha (base 1)
+        
         return { id };
     }
 

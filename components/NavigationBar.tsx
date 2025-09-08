@@ -29,7 +29,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({ onNavigate, activeSection
   ];
 
   return (
-    <nav className="sticky top-0 bg-white/80 dark:bg-brand-dark-bg/80 backdrop-blur-lg shadow-md z-30">
+    <nav className="bg-white/80 dark:bg-brand-dark-bg/80 backdrop-blur-lg shadow-md">
       <div className="container mx-auto px-4">
         <div className="flex justify-center items-center h-16">
           <div className="overflow-x-auto whitespace-nowrap" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>

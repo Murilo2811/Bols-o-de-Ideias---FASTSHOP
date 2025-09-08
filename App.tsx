@@ -127,7 +127,10 @@ const MainAppContent: React.FC = () => {
   return (
     <div className="bg-gray-100 dark:bg-brand-dark-bg min-h-screen font-sans aurora-bg">
       <Header user={user} onLogout={logout} onHelpClick={() => setIsHelpModalOpen(true)} onCommandMenuClick={() => setIsCommandMenuOpen(true)} />
-      <NavigationBar onNavigate={handleNavigate} activeSection={activeSection} />
+      
+      <div className="sticky top-0 z-30">
+        <NavigationBar onNavigate={handleNavigate} activeSection={activeSection} />
+      </div>
 
       <main className="container mx-auto p-4 md:p-8 relative z-10">
         <IdeaGeneratorSection ref={sections.ideaGenerator} />
