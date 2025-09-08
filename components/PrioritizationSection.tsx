@@ -6,10 +6,11 @@ import {
 import type { Service, ServiceStatus } from '../types';
 import Section from './Section';
 import Loader from './Loader';
+import Modal from './Modal';
 import { useServices } from '../contexts/ServicesContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { criteriaData } from '../data/criteriaData';
+import { criteriaData, Criterion } from '../data/criteriaData';
 import Pagination from './Pagination';
 
 interface PrioritizationSectionProps {}
@@ -120,7 +121,6 @@ const statusDisplayMap: Record<ServiceStatus, string> = {
 };
 const statusOptions: ServiceStatus[] = ['avaliação', 'aprovada', 'cancelada', 'finalizada'];
 
-
 const SortableHeader: React.FC<{
     title: string;
     sortKey: string;
@@ -128,8 +128,9 @@ const SortableHeader: React.FC<{
     sortConfig: SortConfig | null;
     className?: string;
     isText?: boolean;
-    criterionInfo?: import('../data/criteriaData').Criterion;
-}> = ({ title, sortKey, onSort, sortConfig, className = '', isText = false, criterionInfo }) => {
+    criterionInfo?: Criterion;
+    onExplain: (criterion: Criterion) => void;
+}> = ({ title, sortKey, onSort, sortConfig, className = '', isText = false, criterionInfo, onExplain }) => {
     const isSorted = sortConfig?.key === sortKey;
     const directionIcon = isSorted ? (sortConfig.direction === 'ascending' ? '▲' : '▼') : '';
 
@@ -145,26 +146,11 @@ const SortableHeader: React.FC<{
                     {isSorted && <span className="text-xs text-brand-mid dark:text-brand-light">{directionIcon}</span>}
                 </button>
                 {criterionInfo && (
-                    <div className="relative flex items-center cursor-help">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <button onClick={() => onExplain(criterionInfo)} className="flex items-center" aria-label={`Exibir detalhes sobre ${criterionInfo.title}`}>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400 hover:text-brand-dark dark:hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {/* Tooltip */}
-                        <div
-                            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-80 p-4 bg-brand-dark text-white text-sm rounded-lg shadow-lg 
-                                       opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-20
-                                       text-left font-normal normal-case tracking-normal"
-                        >
-                            <h4 className="font-bold mb-2 text-base">{criterionInfo.title}</h4>
-                            <p className="mb-3 text-xs">{criterionInfo.description}</p>
-                            <ul className="list-disc list-inside space-y-1 text-xs">
-                                {criterionInfo.subCriteria.map((sc, i) => <li key={i}>{sc}</li>)}
-                            </ul>
-                            <svg className="absolute text-brand-dark h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255" xmlSpace="preserve">
-                                <polygon className="fill-current" points="0,0 127.5,127.5 255,0"/>
-                            </svg>
-                        </div>
-                    </div>
+                    </button>
                 )}
             </div>
         </th>
@@ -182,9 +168,10 @@ interface RankingTableProps {
   onSaveChanges: () => void;
   onDiscardChanges: () => void;
   isSaving: boolean;
+  onExplainCriterion: (criterion: Criterion) => void;
 }
 
-const RankingTable: React.FC<RankingTableProps> = ({ data, originalData, onServiceChange, sortConfig, onSort, pageStartIndex, modifiedServiceIds, onSaveChanges, onDiscardChanges, isSaving }) => {
+const RankingTable: React.FC<RankingTableProps> = ({ data, originalData, onServiceChange, sortConfig, onSort, pageStartIndex, modifiedServiceIds, onSaveChanges, onDiscardChanges, isSaving, onExplainCriterion }) => {
   const { user } = useAuth();
   const isViewer = user?.role === 'Leitor';
   const [localServices, setLocalServices] = useState(data);
@@ -242,7 +229,7 @@ const RankingTable: React.FC<RankingTableProps> = ({ data, originalData, onServi
         <thead className="bg-gray-100 dark:bg-brand-dark-card/50">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Rank</th>
-            <SortableHeader title="Ideia de Serviço" sortKey="service" onSort={onSort} sortConfig={sortConfig} isText />
+            <SortableHeader title="Ideia de Serviço" sortKey="service" onSort={onSort} sortConfig={sortConfig} isText onExplain={() => {}} />
             {criteriaData.map((criterion, i) => (
               <SortableHeader
                 key={criterion.id}
@@ -251,12 +238,13 @@ const RankingTable: React.FC<RankingTableProps> = ({ data, originalData, onServi
                 onSort={onSort}
                 sortConfig={sortConfig}
                 criterionInfo={criterion}
+                onExplain={onExplainCriterion}
               />
             ))}
-            <SortableHeader title="Est. Faturamento" sortKey="revenueEstimate" onSort={onSort} sortConfig={sortConfig} />
-            <SortableHeader title="Total" sortKey="total" onSort={onSort} sortConfig={sortConfig} />
+            <SortableHeader title="Est. Faturamento" sortKey="revenueEstimate" onSort={onSort} sortConfig={sortConfig} onExplain={() => {}} />
+            <SortableHeader title="Total" sortKey="total" onSort={onSort} sortConfig={sortConfig} onExplain={() => {}}/>
             <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Classificação</th>
-            <SortableHeader title="Status" sortKey="status" onSort={onSort} sortConfig={sortConfig} />
+            <SortableHeader title="Status" sortKey="status" onSort={onSort} sortConfig={sortConfig} onExplain={() => {}}/>
           </tr>
         </thead>
         <tbody className="bg-white dark:bg-brand-dark-card divide-y divide-gray-200 dark:divide-brand-dark-border">
@@ -360,6 +348,32 @@ const RankingTable: React.FC<RankingTableProps> = ({ data, originalData, onServi
   );
 };
 
+const CriterionHelpModal: React.FC<{ criterion: Criterion | null; onClose: () => void }> = ({ criterion, onClose }) => {
+    if (!criterion) return null;
+
+    return (
+        <Modal isOpen={!!criterion} onClose={onClose} title={criterion.title}>
+            <div className="space-y-4 text-gray-700 dark:text-gray-300">
+                <p className="text-base">{criterion.description}</p>
+                <div>
+                    <h4 className="font-bold text-lg text-brand-dark dark:text-white mb-2">Critérios de Avaliação (Pontos a considerar):</h4>
+                    <ul className="list-disc list-inside space-y-2 pl-2">
+                        {criterion.subCriteria.map((sc, i) => <li key={i}>{sc}</li>)}
+                    </ul>
+                </div>
+                 <div className="text-center pt-4">
+                    <button
+                    onClick={onClose}
+                    className="bg-brand-dark text-white dark:bg-gray-200 dark:text-black px-6 py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                    >
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
 
 const PrioritizationSection = forwardRef<HTMLElement, PrioritizationSectionProps>((props, ref) => {
   const { services, updateService, downloadCSV, refreshData, isRefreshing } = useServices();
@@ -370,6 +384,7 @@ const PrioritizationSection = forwardRef<HTMLElement, PrioritizationSectionProps
   const [showChart, setShowChart] = useState(false);
   const [modifiedServices, setModifiedServices] = useState<{ [id: number]: Service }>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [explainingCriterion, setExplainingCriterion] = useState<Criterion | null>(null);
 
   const uniqueClusters = useMemo(() => [...new Set(services.map(s => s.cluster).filter(Boolean))].sort(), [services]);
   const classificationOptions = ['Altíssima', 'Alta', 'Média', 'Baixa'];
@@ -569,6 +584,7 @@ const PrioritizationSection = forwardRef<HTMLElement, PrioritizationSectionProps
               onSaveChanges={handleSaveChanges}
               onDiscardChanges={handleDiscardChanges}
               isSaving={isSaving}
+              onExplainCriterion={(criterion) => setExplainingCriterion(criterion)}
             />
             <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </>
@@ -577,8 +593,11 @@ const PrioritizationSection = forwardRef<HTMLElement, PrioritizationSectionProps
         {!isRefreshing && processedData.length === 0 && (
              <p className="text-center text-gray-500 dark:text-gray-400 py-8">Nenhuma ideia encontrada para os filtros selecionados.</p>
         )}
-        
       </div>
+       <CriterionHelpModal 
+        criterion={explainingCriterion} 
+        onClose={() => setExplainingCriterion(null)} 
+      />
     </Section>
   );
 });

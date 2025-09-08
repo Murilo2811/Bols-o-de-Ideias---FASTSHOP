@@ -3,7 +3,6 @@ import { ServicesProvider, useServices } from './contexts/ServicesContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 import AuthPage from './components/AuthPage';
-import Logo from './components/Logo';
 
 import Header from './components/Header';
 import NavigationBar from './components/NavigationBar';
@@ -96,7 +95,6 @@ const MainAppContent: React.FC = () => {
   if (isLoading && !appError) {
     return (
       <div className={`flex flex-col items-center justify-center min-h-screen ${theme === 'dark' ? 'bg-brand-dark-bg' : 'bg-gray-100'}`}>
-        <Logo className="h-16 mb-8" />
         <Loader text={loadingMessage} />
       </div>
     );
@@ -106,7 +104,6 @@ const MainAppContent: React.FC = () => {
     return (
       <div className={`flex flex-col items-center justify-center min-h-screen p-4 ${theme === 'dark' ? 'bg-brand-dark-bg' : 'bg-gray-100'}`}>
         <div className="text-center mb-8">
-            <Logo className="h-12 mx-auto" />
             <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-2">Bolsão de Ideias</h1>
         </div>
         <div className="w-full max-w-2xl bg-white dark:bg-brand-dark-card p-8 rounded-xl shadow-2xl text-center">
@@ -126,9 +123,8 @@ const MainAppContent: React.FC = () => {
 
   return (
     <div className="bg-gray-100 dark:bg-brand-dark-bg min-h-screen font-sans aurora-bg">
-      <Header user={user} onLogout={logout} onHelpClick={() => setIsHelpModalOpen(true)} onCommandMenuClick={() => setIsCommandMenuOpen(true)} />
-      
       <div className="sticky top-0 z-30">
+        <Header user={user} onLogout={logout} onHelpClick={() => setIsHelpModalOpen(true)} onCommandMenuClick={() => setIsCommandMenuOpen(true)} />
         <NavigationBar onNavigate={handleNavigate} activeSection={activeSection} />
       </div>
 

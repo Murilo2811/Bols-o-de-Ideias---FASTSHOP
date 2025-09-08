@@ -15,12 +15,12 @@ Bem-vindo ao Bolsão de Ideias! Esta é uma plataforma interativa e segura para 
 A plataforma utiliza um sistema de controle de acesso baseado em três funções para garantir a segurança e a organização dos dados:
 
 *   **👑 Administrador**:
-    *   **Permissão Total**: Pode criar, editar, priorizar e excluir qualquer ideia no portfólio.
+    *   **Permissão Total**: Pode criar, editar, priorizar e excluir (arquivar) qualquer ideia no portfólio.
     *   **Uso Ideal**: Para líderes de projeto e gestores que precisam de controle completo sobre a plataforma.
 
 *   **✍️ Colaborador**:
     *   **Pode**: Criar novas ideias, editar informações e atribuir notas de priorização.
-    *   **Não Pode**: Excluir ideias. Isso previne a remoção acidental de propostas importantes.
+    *   **Não Pode**: Excluir (arquivar) ideias. Isso previne a remoção acidental de propostas importantes.
     *   **Uso Ideal**: Para membros da equipe que participam ativamente da construção e avaliação do portfólio.
 
 *   **👀 Leitor**:
@@ -68,11 +68,11 @@ Esta planilha armazenará todas as suas ideias de serviço e as credenciais dos 
         - `name`
         - `email`
         - `password`
-        - `role`
+        - `role`  **(NOVO CAMPO OBRIGATÓRIO)**
 
-4.  **(NOVO) Configure a Aba de Ideias Apagadas (`DeletedIdeiasDB`)**:
-    - Crie uma **terceira página (aba)** na mesma planilha e renomeie-a para `DeletedIdeiasDB`.
-    - **Copie a primeira linha (cabeçalhos) da aba `IdeiasDB` e cole-a na primeira linha da nova aba `DeletedIdeiasDB`**. Isso é essencial para que o arquivamento funcione corretamente.
+4. **Configure a Aba de Ideias Excluídas (`DeletedIdeiasDB`)**:
+    - Crie uma **terceira página (aba)** e renomeie-a para `DeletedIdeiasDB`.
+    - **Copie e cole a primeira linha (cabeçalhos) da aba `IdeiasDB`** para a primeira linha da `DeletedIdeiasDB`. Isso garante que ambas tenham a mesma estrutura.
 
 ### Parte 2: Configurar o Backend (Google Apps Script)
 
@@ -89,33 +89,43 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
     const SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
     const IDEAS_SHEET_NAME = 'IdeiasDB';
     const USERS_SHEET_NAME = 'UsersDB';
-    const DELETED_IDEAS_SHEET_NAME = 'DeletedIdeiasDB'; // Nova planilha para arquivamento
+    const DELETED_IDEAS_SHEET_NAME = 'DeletedIdeiasDB';
 
-    const getSheet = (name) => SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(name);
+    // Função auxiliar para obter uma aba de forma segura
+    const getSheet = (sheetName) => {
+      if (!sheetName) {
+          throw new Error("Nome da aba (sheetName) não foi fornecido para getSheet.");
+      }
+      const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName(sheetName);
+      if (!sheet) {
+          throw new Error(`A aba "${sheetName}" não foi encontrada na planilha. Verifique o nome.`);
+      }
+      return sheet;
+    };
     
     // Converte uma linha da planilha para um objeto de serviço
     const rowToService = (row, headers) => {
-        // CORREÇÃO: Adiciona uma verificação para evitar erros quando os parâmetros são indefinidos.
         if (!row || !headers) {
-            Logger.log('rowToService chamada com parâmetros inválidos (row ou headers indefinidos).');
-            return {}; // Retorna um objeto vazio para evitar o travamento.
+            Logger.log("rowToService chamada com parâmetros inválidos (row ou headers).");
+            return {};
         }
-    
         const service = {};
         headers.forEach((header, index) => {
             let value = row[index];
-            if (header.startsWith('score_') || header === 'id' || header === 'revenue_estimate') {
+            // Converte campos numéricos
+            if (['id', 'score_alinhamento', 'score_valor_cliente', 'score_impacto_fin', 'score_viabilidade', 'score_vantagem_comp', 'revenue_estimate'].includes(header)) {
                 value = Number(value) || 0;
             }
             service[header] = value;
         });
         
+        // Agrupa os scores em um array
         service.scores = [
             service.score_alinhamento, service.score_valor_cliente, service.score_impacto_fin,
             service.score_viabilidade, service.score_vantagem_comp
         ];
         
-        // Remove as propriedades de score individuais
+        // Remove os campos de score individuais
         delete service.score_alinhamento; delete service.score_valor_cliente;
         delete service.score_impacto_fin; delete service.score_viabilidade;
         delete service.score_vantagem_comp;
@@ -131,12 +141,10 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
             let result;
 
             switch (action) {
-                // CRUD de Serviços
                 case 'getServices': result = doGetServices(); break;
                 case 'addService': result = doAddService(payload.service); break;
                 case 'updateService': result = doUpdateService(payload.service); break;
-                case 'deleteService': result = doDeleteService(payload.id); break; // A lógica foi atualizada
-                // Autenticação
+                case 'deleteService': result = doDeleteService(payload.id); break;
                 case 'loginUser': result = doLoginUser(payload); break;
                 case 'registerUser': result = doRegisterUser(payload); break;
                 default: throw new Error(`Ação desconhecida: ${action}`);
@@ -149,11 +157,10 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
         }
     }
 
-    // --- Funções de CRUD na Planilha ---
     function doGetServices() {
         const sheet = getSheet(IDEAS_SHEET_NAME);
-        if (!sheet) throw new Error(`Aba "${IDEAS_SHEET_NAME}" não encontrada.`);
         const data = sheet.getDataRange().getValues();
+        if (data.length <= 1) return []; // Retorna vazio se só houver cabeçalho
         const headers = data.shift();
         return data.map(row => rowToService(row, headers));
     }
@@ -182,79 +189,86 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
         const data = sheet.getDataRange().getValues();
         const headers = data[0];
         const idColIndex = headers.indexOf('id');
-        const rowIndex = data.slice(1).findIndex(row => row[idColIndex] == service.id) + 2; 
-
-        if (rowIndex === 1) throw new Error(`Serviço com id ${service.id} não encontrado.`);
+        if (idColIndex === -1) throw new Error("Coluna 'id' não encontrada na aba IdeiasDB.");
         
-        const newRow = headers.map(header => service[header] !== undefined ? service[header] : data[rowIndex - 1][headers.indexOf(header)]);
-        sheet.getRange(rowIndex, 1, 1, headers.length).setValues([newRow]);
-        return rowToService(newRow, headers);
-    }
+        const rowIndexToUpdate = data.findIndex(row => row[idColIndex] == service.id); 
 
+        if (rowIndexToUpdate === -1) throw new Error(`Serviço com id ${service.id} não encontrado.`);
+        
+        const newRowData = headers.map(header => {
+          if (header.startsWith('score_')) {
+              const scoreIndex = ['score_alinhamento', 'score_valor_cliente', 'score_impacto_fin', 'score_viabilidade', 'score_vantagem_comp'].indexOf(header);
+              return service.scores[scoreIndex] ?? data[rowIndexToUpdate][headers.indexOf(header)];
+          }
+          if (header === 'revenue_estimate') return service.revenueEstimate;
+          return service[header] !== undefined ? service[header] : data[rowIndexToUpdate][headers.indexOf(header)];
+        });
+        
+        sheet.getRange(rowIndexToUpdate + 1, 1, 1, headers.length).setValues([newRowData]);
+        return rowToService(newRowData, headers);
+    }
+    
     function doDeleteService(id) {
         const ideasSheet = getSheet(IDEAS_SHEET_NAME);
         const deletedSheet = getSheet(DELETED_IDEAS_SHEET_NAME);
         
-        if (!ideasSheet) throw new Error(`Aba "${IDEAS_SHEET_NAME}" não encontrada.`);
-        if (!deletedSheet) throw new Error(`Aba de arquivamento "${DELETED_IDEAS_SHEET_NAME}" não encontrada. Crie-a conforme as instruções do README.`);
-
         const data = ideasSheet.getDataRange().getValues();
         const idColIndex = data[0].indexOf('id');
-        const rowIndex = data.findIndex(row => row[idColIndex] == id);
-        
-        if (rowIndex === -1) throw new Error(`Serviço com id ${id} não encontrado.`);
+        if (idColIndex === -1) throw new Error("Coluna 'id' não encontrada na aba IdeiasDB.");
 
-        // Copia a linha para a planilha de deletados antes de apagar
-        const rowToDelete = data[rowIndex];
-        deletedSheet.appendRow(rowToDelete);
+        const rowIndexToDelete = data.findIndex(row => row[idColIndex] == id);
+
+        if (rowIndexToDelete === -1) {
+            throw new Error(`Serviço com id ${id} não encontrado para exclusão.`);
+        }
         
-        // Apaga a linha da planilha original
-        ideasSheet.deleteRow(rowIndex + 1); // +1 porque findIndex é no array de dados, e deleteRow é na planilha (base 1)
+        const rowData = data[rowIndexToDelete];
+        deletedSheet.appendRow(rowData);
+        
+        // O índice da linha na planilha é `rowIndexToDelete + 1` porque o array é 0-indexado
+        ideasSheet.deleteRow(rowIndexToDelete + 1);
         
         return { id };
     }
 
-    // --- Funções de Autenticação ---
     function doLoginUser({ email, password }) {
       const sheet = getSheet(USERS_SHEET_NAME);
-      if (!sheet) throw new Error(`Aba "${USERS_SHEET_NAME}" não encontrada.`);
       const data = sheet.getDataRange().getValues();
       const headers = data.shift();
       const emailCol = headers.indexOf('email');
       const passwordCol = headers.indexOf('password');
 
       const userRow = data.find(row => row[emailCol] === email);
-      if (!userRow) throw new Error('Email ou senha inválidos.');
-
-      if (userRow[passwordCol] !== password) throw new Error('Email ou senha inválidos.');
+      if (!userRow) throw new Error('Email inválido.');
+      if (userRow[passwordCol] !== password) throw new Error('Senha inválida.');
 
       const user = {};
       headers.forEach((header, index) => {
         if (header !== 'password') user[header] = userRow[index];
       });
 
-      return { user, token: `mock_token_${Date.now()}` };
+      return { user, token: `server_token_${Date.now()}` };
     }
 
     function doRegisterUser({ name, email, password }) {
       const sheet = getSheet(USERS_SHEET_NAME);
-      if (!sheet) throw new Error(`Aba "${USERS_SHEET_NAME}" não encontrada.`);
       const data = sheet.getDataRange().getValues();
       const headers = data.shift() || sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
       const emailCol = headers.indexOf('email');
 
-      const emailExists = data.some(row => row[emailCol] === email);
-      if (emailExists) throw new Error('Este email já está em uso.');
+      if (data.some(row => row[emailCol] === email)) {
+        throw new Error('Este email já está em uso.');
+      }
 
       const lastRow = sheet.getLastRow();
       const lastId = lastRow < 2 ? 0 : sheet.getRange(lastRow, 1).getValue();
       const newId = (Number(lastId) || 0) + 1;
 
-      const newUserRow = [newId, name, email, password, 'Leitor']; // Novos usuários são 'Leitor' por padrão
+      const newUserRow = [newId, name, email, password, 'Leitor'];
       sheet.appendRow(newUserRow);
       
       const user = { id: newId, name, email, role: 'Leitor' };
-      return { user, token: `mock_token_${Date.now()}` };
+      return { user, token: `server_token_${Date.now()}` };
     }
     ```
 
@@ -282,9 +296,29 @@ Este script atuará como a ponte (API) entre o aplicativo e sua planilha.
 3.  **Pronto!** Salve o arquivo. Ao recarregar o aplicativo, ele estará conectado de forma segura à sua Planilha Google. Crie sua primeira conta na tela de registro para começar a usar.
 
 ---
-## Solução de Problemas
+## Solução de Problemas e Depuração (Debugging)
 
-Esta seção ajuda a resolver os erros mais comuns que podem ocorrer durante a configuração.
+Esta seção ajuda a resolver os erros mais comuns que podem ocorrer durante a configuração e o teste do seu backend.
+
+### 🚨 Erro de Depuração: `sheetName: undefined` ou `sheet: <value unavailable>`
+
+<div style="background-color: #fef2f2; border: 1px solid #ef4444; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+  <h3 style="color: #b91c1c; margin-top: 0;"><strong>Está vendo este erro ao usar o depurador?</strong></h3>
+  <p>Isso <strong>não é um bug</strong> no código. Acontece porque você está tentando executar uma função auxiliar (como `getSheet` ou `rowToService`) diretamente, sem fornecer as informações que ela precisa para funcionar.</p>
+</div>
+
+#### **Como Depurar o Código Corretamente:**
+
+O script foi projetado para ser chamado a partir de funções principais, que são acionadas pelo aplicativo. Para testar ou depurar, você deve sempre executar uma dessas funções principais.
+
+1.  **Selecione a Função Correta:**
+    *   No editor do Google Apps Script, ao lado dos botões "Executar" e "Depurar", há um menu suspenso.
+    *   **Não** deixe a seleção em `getSheet` ou `rowToService`.
+    *   Em vez disso, selecione uma função principal, como **`doGetServices`**. Esta é a melhor função para um teste geral, pois ela lê e processa todos os dados da sua planilha.
+
+2.  **Execute o Depurador:**
+    *   Com a função `doGetServices` selecionada, clique no botão **`Depurar`**.
+    *   O script agora executará o fluxo completo. Se você colocar um "breakpoint" (ponto de interrupção) dentro da função `getSheet`, verá que desta vez as variáveis `sheetName` e `sheet` terão os valores corretos quando a execução parar ali.
 
 ### 🚨 Erro 1: "Ação desconhecida"
 
@@ -310,8 +344,6 @@ Esta seção ajuda a resolver os erros mais comuns que podem ocorrer durante a c
     *   Clique em **`Implantar`**.
 
 Isso atualizará seu backend com as novas funções, e o erro desaparecerá após recarregar o aplicativo.
-
----
 
 ### 🚨 Erro 2: "Erro de Conexão com o Servidor" (Failed to fetch)
 
