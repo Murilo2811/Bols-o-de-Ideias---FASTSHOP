@@ -6,7 +6,6 @@ interface HeaderProps {
   user: User | null;
   onLogout: () => void;
   onHelpClick: () => void;
-  onCommandMenuClick: () => void;
 }
 
 const ThemeToggleButton: React.FC = () => {
@@ -31,7 +30,7 @@ const ThemeToggleButton: React.FC = () => {
     );
 };
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout, onHelpClick, onCommandMenuClick }) => {
+const Header: React.FC<HeaderProps> = ({ user, onLogout, onHelpClick }) => {
   return (
     <header className="relative bg-brand-dark/80 dark:bg-brand-dark-bg/80 backdrop-blur-lg text-white p-8 md:p-12 text-center shadow-lg">
        <div className="absolute top-4 left-4 flex items-center gap-2 sm:gap-4 text-sm">
@@ -52,13 +51,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onHelpClick, onCommandM
         )}
       </div>
       <div className="absolute top-4 right-4 flex items-center gap-2 sm:gap-4">
-        <button
-            onClick={onCommandMenuClick}
-            className="hidden sm:flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold text-xs px-3 py-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-white"
-            aria-label="Abrir menu de comandos"
-        >
-            Busca Rápida <kbd className="font-sans font-semibold">⌘K</kbd>
-        </button>
         <ThemeToggleButton />
         <button
           onClick={onHelpClick}

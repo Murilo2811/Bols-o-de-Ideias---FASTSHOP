@@ -16,7 +16,7 @@ import Footer from './components/Footer';
 import Loader from './components/Loader';
 import Notification from './components/Notification';
 import HelpModal from './components/HelpModal';
-import CommandMenu from './components/CommandMenu';
+import ScrollToTopButton from './components/ScrollToTopButton';
 
 const App: React.FC = () => {
   return (
@@ -47,7 +47,7 @@ const MainAppContent: React.FC = () => {
   const [activeSection, setActiveSection] = useState<string>('ideaGenerator');
   const [highlightedClusterId, setHighlightedClusterId] = useState<string | null>(null);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false);
+  const [isScrollButtonVisible, setIsScrollButtonVisible] = useState(false);
 
 
   const sections: { [key: string]: React.RefObject<HTMLElement> } = {
@@ -62,24 +62,25 @@ const MainAppContent: React.FC = () => {
   useEffect(() => {
     const clearHighlight = () => setHighlightedClusterId(null);
     document.addEventListener('click', clearHighlight);
-    return () => document.removeEventListener('click', clearHighlight);
-  }, []);
-  
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault();
-        setIsCommandMenuOpen(prev => !prev);
+
+    const toggleScrollButtonVisibility = () => {
+      if (window.pageYOffset > 300) {
+        setIsScrollButtonVisible(true);
+      } else {
+        setIsScrollButtonVisible(false);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('scroll', toggleScrollButtonVisibility);
+
+    return () => {
+        document.removeEventListener('click', clearHighlight);
+        window.removeEventListener('scroll', toggleScrollButtonVisibility);
+    }
   }, []);
 
   const handleNavigate = useCallback((sectionId: string) => {
     sections[sectionId].current?.scrollIntoView({ behavior: 'smooth' });
     setActiveSection(sectionId);
-    setIsCommandMenuOpen(false);
   }, [sections]);
   
   const handleClusterNavigate = (clusterId: string, event: React.MouseEvent) => {
@@ -90,6 +91,14 @@ const MainAppContent: React.FC = () => {
         setHighlightedClusterId(clusterId);
         setActiveSection('clusterAnalysis');
     }
+  };
+  
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    setActiveSection('ideaGenerator');
   };
 
   if (isLoading && !appError) {
@@ -124,7 +133,7 @@ const MainAppContent: React.FC = () => {
   return (
     <div className="bg-gray-100 dark:bg-brand-dark-bg min-h-screen font-sans aurora-bg">
       <div className="sticky top-0 z-30">
-        <Header user={user} onLogout={logout} onHelpClick={() => setIsHelpModalOpen(true)} onCommandMenuClick={() => setIsCommandMenuOpen(true)} />
+        <Header user={user} onLogout={logout} onHelpClick={() => setIsHelpModalOpen(true)} />
         <NavigationBar onNavigate={handleNavigate} activeSection={activeSection} />
       </div>
 
@@ -141,12 +150,7 @@ const MainAppContent: React.FC = () => {
 
       {notification && <Notification message={notification.message} type={notification.type} />}
       <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
-      <CommandMenu 
-        isOpen={isCommandMenuOpen} 
-        onClose={() => setIsCommandMenuOpen(false)} 
-        services={services}
-        onNavigate={handleNavigate}
-      />
+      {isScrollButtonVisible && <ScrollToTopButton onClick={scrollToTop} />}
     </div>
   );
 };

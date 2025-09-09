@@ -1,3 +1,5 @@
+import type { Service } from '../types';
+
 // ====================================================================================
 // PASSO CRÍTICO DE CONFIGURAÇÃO: INSIRA A URL DO SEU WEBHOOK AQUI
 // ====================================================================================
@@ -6,8 +8,18 @@
 //
 // Exemplo: 'https://hooks.zapier.com/hooks/catch/123456/abcdef/'
 //
-// Se esta URL não for alterada, o envio falhará com um erro de rede.
-const WEBHOOK_URL = 'YOUR_WEBHOOK_URL_HERE';
+// Se esta URL não for alterada, o botão de automação ficará desabilitado.
+const WEBHOOK_URL_PLACEHOLDER = 'YOUR_WEBHOOK_URL_HERE';
+// FIX: Explicitly type WEBHOOK_URL as a string to prevent TypeScript from inferring a literal type, which causes a comparison error.
+const WEBHOOK_URL: string = 'https://hook.us1.make.com/xqovlb26ace5r9mgll13d2gbax2msm7n';
+
+/**
+ * Verifica se a URL do webhook foi configurada pelo usuário.
+ * @returns {boolean} `true` se a URL for válida, `false` caso contrário.
+ */
+export const isWebhookConfigured = (): boolean => {
+  return WEBHOOK_URL !== WEBHOOK_URL_PLACEHOLDER && !!WEBHOOK_URL;
+};
 
 /**
  * Envia dados para um webhook externo.
@@ -15,7 +27,7 @@ const WEBHOOK_URL = 'YOUR_WEBHOOK_URL_HERE';
  * @returns Uma promessa que resolve se a requisição for bem-sucedida.
  */
 export async function sendToWebhook(payload: object): Promise<void> {
-  if (WEBHOOK_URL === 'YOUR_WEBHOOK_URL_HERE' || !WEBHOOK_URL) {
+  if (!isWebhookConfigured()) {
     console.error('URL do Webhook não configurada em services/webhookService.ts');
     throw new Error('A URL do Webhook não foi configurada. Verifique o arquivo services/webhookService.ts.');
   }

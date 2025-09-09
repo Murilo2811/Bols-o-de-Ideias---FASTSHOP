@@ -10,6 +10,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage';
 import Pagination from './Pagination';
 import { criteriaData } from '../data/criteriaData';
 import AutomationModal from './AutomationModal';
+import { isWebhookConfigured } from '../services/webhookService';
 
 
 interface ServiceExplorerSectionProps {}
@@ -52,6 +53,7 @@ const ServiceCard: React.FC<{
 }> = ({ service, onDelete, onEdit, onView, onAutomate }) => {
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
+  const webhookIsReady = isWebhookConfigured();
 
   const canEdit = user?.role === 'Administrador' || user?.role === 'Colaborador';
   const canDelete = user?.role === 'Administrador';
@@ -85,10 +87,15 @@ const ServiceCard: React.FC<{
     >
       {canEdit && (
         <div className="absolute top-2 right-2 flex gap-1">
-            <button onClick={handleAutomate} disabled={isDeleting} className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-600 dark:hover:text-gray-200 transition-colors disabled:opacity-50" title="Acionar Automação">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            <button
+              onClick={handleAutomate}
+              disabled={isDeleting || !webhookIsReady}
+              className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-600 dark:hover:text-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={webhookIsReady ? "Acionar Automação" : "Automação desabilitada: Configure a URL do Webhook"}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
             </button>
             <button onClick={handleEdit} disabled={isDeleting} className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 hover:text-gray-800 dark:hover:bg-gray-600 dark:hover:text-gray-200 transition-colors disabled:opacity-50" title="Editar Ideia">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>
