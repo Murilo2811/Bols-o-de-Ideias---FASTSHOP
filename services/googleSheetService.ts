@@ -10,7 +10,7 @@ import type { Service, User } from '../types';
 //
 // ATENÇÃO: A partir desta versão, o modo de demonstração foi removido.
 // A inserção de uma URL de backend válida é OBRIGATÓRIA para o funcionamento do aplicativo.
-export const WEB_APP_URL: string = 'https://script.google.com/macros/s/AKfycbyW8Ll4tUYTepsP4W2cOreKXBfBi6i7-FiHBWGllOtK7-C89VBIm1FDW3FfcmRuvYif/exec';
+export const WEB_APP_URL: string = 'https://script.google.com/macros/s/AKfycbxbkCsRnV85dmmVGgreu9R-z5-orZZtHVRdzoSODWZ_yn0YVe_A129GV3E5iMiX7UCd/exec';
 
 
 interface AuthResponse {
