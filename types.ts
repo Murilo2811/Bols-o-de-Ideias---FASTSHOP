@@ -1,3 +1,5 @@
+import React from 'react';
+
 export type ServiceStatus = 'avaliação' | 'aprovada' | 'cancelada' | 'finalizada';
 export type UserRole = 'Administrador' | 'Colaborador' | 'Leitor';
 

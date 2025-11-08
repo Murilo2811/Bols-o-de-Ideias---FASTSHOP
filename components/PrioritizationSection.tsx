@@ -421,7 +421,8 @@ const PrioritizationSection = forwardRef<HTMLElement, PrioritizationSectionProps
     setIsSaving(true);
     const updates = Object.values(modifiedServices);
     try {
-      await Promise.all(updates.map(service => updateService(service)));
+      // FIX: Explicitly cast service to Service type to resolve type inference issue with Object.values.
+      await Promise.all(updates.map(service => updateService(service as Service)));
       setModifiedServices({});
     } catch (error) {
       console.error("Falha ao salvar alterações em massa", error);
